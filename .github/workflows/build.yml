@@ -1,0 +1,43 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  image:
+    name: image builds and serves
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: order-reconciliation:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # No API key here on purpose. This proves the image boots and serves the
+      # page; /api/check needs a key and is exercised from a running Codespace.
+      - name: Serves the page
+        run: |
+          docker run -d --name ci -p 8100:8100 order-reconciliation:ci
+          for i in $(seq 1 20); do
+            if curl -fsS -o /dev/null http://127.0.0.1:8100/; then
+              echo "served after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "never came up"; docker logs ci; exit 1
+
+      - name: Stops gracefully
+        run: |
+          docker stop -t 10 ci
+          docker logs ci 2>&1 | grep -q "Application shutdown complete"

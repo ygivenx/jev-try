@@ -3,12 +3,11 @@
 .venv/
 .git/
 .gitignore
+.devcontainer/
+.github/
 __pycache__/
 *.py[cod]
+*.ipynb
 .ipynb_checkpoints/
 .DS_Store
-*.ipynb
-alfred_triage.py
-jev_feature_tour.py
 README.md
-docs/

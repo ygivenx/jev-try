@@ -18,12 +18,12 @@ deteriorates."* Both are named; neither should be ordered.
 
 So each catalogue item gets **two atomic questions** instead of one:
 
-| | mentioned | committed |
-| --- | --- | --- |
-| Blood cultures | 0.99 | 0.99 | → missing from chart, nudge |
-| CT chest | 0.99 | 0.03 | → declined, say so, do not nudge |
-| Vancomycin | 0.97 | 0.04 | → held, say so, do not nudge |
-| Urinalysis | 0.02 | 0.02 | → never came up, stay silent |
+| | mentioned | committed | |
+| --- | --- | --- | --- |
+| Blood cultures | 0.98 | 0.98 | missing from the chart — nudge |
+| CT chest | 0.99 | 0.03 | declined — say so, do not nudge |
+| Vancomycin | 0.97 | 0.04 | held — say so, do not nudge |
+| Urinalysis | 0.02 | 0.02 | never came up — stay silent |
 
 Separating the two is what lets the UI distinguish *never came up* from
 *considered and ruled out*. A nudge to order a CT the physician just ruled out is
@@ -34,10 +34,30 @@ commits to it — with the note's own sentences as the options. The highlight is
 therefore always a span the physician actually wrote, selected rather than
 generated.
 
-Per check: 32 questions, then one per missing order. Around 450–560 ms and ~8,000
+Per check: 32 questions, then one per missing order. Around 450 ms and ~8,000
 input tokens, about $0.0003.
 
-## Run it
+## Run it in Codespaces
+
+[**Open in a Codespace**](https://codespaces.new/ygivenx/jev-try) — GitHub runs the
+container, so there is nothing to install and nothing to host.
+
+One-time setup: add a Codespaces secret named `TYPESAFE_API_KEY` at
+[github.com/settings/codespaces](https://github.com/settings/codespaces), scoped to
+this repository. The devcontainer declares it, so the codespace picks it up as an
+environment variable.
+
+On attach it installs dependencies and starts the server on port 8100, then opens a
+preview. To share the URL, make the port public:
+
+```sh
+gh codespace ports visibility 8100:public -c $CODESPACE_NAME
+```
+
+Idle codespaces stop after 30 minutes, which is the right shape for a demo and the
+wrong shape for anything permanent.
+
+## Run it locally
 
 Needs [uv](https://docs.astral.sh/uv/) and a TypeSafe API key.
 
@@ -47,10 +67,6 @@ uv sync
 uv run uvicorn app:app --port 8100 --reload
 ```
 
-Open http://127.0.0.1:8100. The key stays server-side — the browser only ever
-talks to `/api/check`. With no key set, the UI reports that instead of failing
-silently.
-
 ### Docker
 
 ```sh
@@ -58,35 +74,27 @@ docker build -t order-reconciliation .
 docker run --rm -p 8100:8100 --env-file .env order-reconciliation
 ```
 
-The image installs from `uv.lock` with `--no-dev`, so the notebook toolchain stays
-out of it, and runs as a non-root user. It reads `$PORT` if the host sets one,
-which covers Render, Railway, Fly and Cloud Run without changes — set
-`TYPESAFE_API_KEY` as a secret there rather than baking it in.
+The image installs from `uv.lock` with `--no-dev` and runs as a non-root user. It
+reads `$PORT` if the host sets one, which covers Render, Railway, Fly and Cloud Run
+unchanged — set `TYPESAFE_API_KEY` as a secret there rather than baking it in.
 
-## Notebooks
+## Why there is a server at all
 
-Two, both executed with outputs committed. Each is paired with a `.py` file in
-jupytext `py:percent` format — edit either side and `uv run jupytext --sync` keeps
-them together.
-
-- **`jev_feature_tour.ipynb`** — the whole SDK surface in 17 sections: the three
-  primitives, batching, confidence, retries, the exception hierarchy, `response_model`,
-  async, and where the model is unreliable.
-- **`alfred_triage.ipynb`** — a clinical triage workflow following the docs' seven
-  build steps, with code owning every numeric comparison and uncertainty routed to
-  a human.
-
-```sh
-uv run jupyter lab
-```
+GitHub Pages would be simpler, and it does not work here. The TypeSafe API
+authenticates with a bearer token and offers no publishable or domain-scoped key,
+so a static page would have to ship the secret to the browser — where, in a public
+repo, it gets scraped and billed to you. The key stays server-side and the browser
+only ever talks to `/api/check`. With no key set, the UI reports that rather than
+failing silently.
 
 ## Layout
 
 ```
-app.py          FastAPI backend — catalogue, thresholds, the two Jev stages, the diff
-index.html      the whole frontend, no build step
-*.ipynb / *.py  paired notebooks
-Dockerfile      self-contained image
+app.py                      catalogue, thresholds, the two Jev stages, the diff
+index.html                  the whole frontend, no build step
+Dockerfile                  self-contained image
+.devcontainer/              Codespaces: secret wiring and auto-start
+.github/workflows/build.yml builds the image, checks it serves and shuts down
 ```
 
 ## Not for clinical use

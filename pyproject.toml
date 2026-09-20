@@ -10,6 +10,8 @@ dependencies = [
 ]
 
 [dependency-groups]
+# Notebook toolchain, kept out of the image by `uv sync --no-dev`. The notebooks
+# themselves are not part of this repo.
 dev = [
     "ipykernel>=7.3.0",
     "jupyterlab>=4.6.3",
