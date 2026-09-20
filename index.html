@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order reconciliation — Okonkwo, Daniel</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2316323f'/%3E%3Cpath d='M3 4h10M3 8h10M3 12h6' stroke='%23e4ebe4' stroke-width='1.5'/%3E%3Cpath d='M11 12l4-4' stroke='%23a34509' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;450;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --drape: #e4ebe4;
+    --sheet: #fbfcfa;
+    --ink: #16323f;
+    --ink-soft: #4a6572;
+    --rule: #c2cfc6;
+    --open: #a34509;
+    --open-wash: #f7ece3;
+    --placed: #2f6b4f;
+    --sans: "IBM Plex Sans", system-ui, sans-serif;
+    --serif: "Source Serif 4", Georgia, serif;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--drape);
+    color: var(--ink);
+    font: 400 15px/1.5 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- patient banner ---- */
+  .banner {
+    background: var(--ink);
+    color: #dbe5dc;
+    padding: 11px clamp(16px, 3vw, 34px);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 26px;
+  }
+  .banner h1 {
+    font: 600 17px/1.2 var(--sans);
+    letter-spacing: .01em;
+    margin: 0;
+    color: #fff;
+  }
+  .banner dl { display: flex; gap: 26px; margin: 0; flex-wrap: wrap; }
+  .banner div { display: flex; gap: 7px; align-items: baseline; }
+  .banner dt { color: #8fa79b; font-size: 12.5px; }
+  .banner dd { margin: 0; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+  .banner .allergy dd { color: #f0b48a; }
+  .banner code { font: 400 13px/1 var(--mono); }
+
+  /* ---- shell ---- */
+  main {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: clamp(16px, 2.4vw, 30px);
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
+    gap: clamp(16px, 2vw, 26px);
+    align-items: start;
+  }
+  @media (max-width: 960px) { main { grid-template-columns: 1fr; } }
+
+  .pane { background: var(--sheet); border: 1px solid var(--rule); }
+  .pane > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .pane > header h2 { font: 500 14.5px/1 var(--sans); margin: 0; }
+  .unsigned {
+    font-size: 12px;
+    color: var(--open);
+    border: 1px solid #ddc0a8;
+    background: var(--open-wash);
+    padding: 3px 8px;
+    border-radius: 2px;
+  }
+
+  /* ---- the note ---- */
+  .note-body { padding: 26px clamp(20px, 3vw, 40px) 30px; border-left: 3px solid var(--rule); }
+  .note-body p {
+    font: 400 18.5px/1.62 var(--serif);
+    margin: 0 0 1.05em;
+    max-width: 66ch;
+  }
+  .note-body p:last-child { margin-bottom: 0; }
+
+  /* a sentence carrying a commitment the chart has not honoured */
+  .flag {
+    background-image: linear-gradient(var(--open), var(--open));
+    background-repeat: no-repeat;
+    background-position: 0 1.22em;
+    background-size: 0% 1.5px;
+    transition: background-size .5s cubic-bezier(.2, .7, .3, 1);
+    transition-delay: var(--d, 0s);
+    cursor: help;
+  }
+  .revealed .flag { background-size: 100% 1.5px; }
+  .flag.lit { background-color: var(--open-wash); }
+
+  textarea {
+    display: block;
+    width: 100%;
+    min-height: 320px;
+    overflow: hidden;
+    border: none;
+    padding: 26px clamp(20px, 3vw, 40px);
+    border-left: 3px solid var(--open);
+    background: #fff;
+    color: var(--ink);
+    font: 400 17px/1.6 var(--serif);
+    resize: vertical;
+  }
+  textarea:focus { outline: 2px solid var(--ink); outline-offset: -2px; }
+
+  /* ---- buttons ---- */
+  button {
+    font: 450 13.5px/1 var(--sans);
+    border-radius: 3px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    padding: 9px 15px;
+    cursor: pointer;
+  }
+  button.ghost { background: transparent; color: var(--ink); border-color: var(--rule); }
+  button.ghost:hover { border-color: var(--ink); }
+  button.add { padding: 6px 11px; font-size: 12.5px; background: transparent; color: var(--open); border-color: #ddc0a8; }
+  button.add:hover { background: var(--open); color: #fff; border-color: var(--open); }
+  button:disabled { opacity: .45; cursor: default; }
+  button:focus-visible { outline: 2px solid var(--open); outline-offset: 2px; }
+
+  /* ---- order sheet ---- */
+  .sheet-section { padding: 15px 18px 18px; border-bottom: 1px solid var(--rule); }
+  .sheet-section:last-child { border-bottom: none; }
+  .sheet-section > h3 { font: 500 12.5px/1 var(--sans); color: var(--ink-soft); margin: 0 0 11px; }
+
+  ul.orders { list-style: none; margin: 0; padding: 0; }
+  ul.orders li {
+    display: grid;
+    grid-template-columns: 15px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: baseline;
+    padding: 8px 0;
+    border-bottom: 1px solid #edf1ec;
+  }
+  ul.orders li:last-child { border-bottom: none; }
+  .glyph { font-size: 13px; line-height: 1.35; }
+  .glyph.ok { color: var(--placed); }
+  .glyph.gap { color: var(--open); }
+  .label { font-size: 14.5px; }
+  .code { display: block; font: 400 11.5px/1.5 var(--mono); color: var(--ink-soft); }
+  .p { font: 400 12.5px/1 var(--mono); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+  .nudge-head {
+    font: 400 19px/1.4 var(--serif);
+    margin: 0 0 14px;
+    max-width: 40ch;
+  }
+  .nudge-head b { font-weight: 600; color: var(--open); }
+  .resolved .nudge-head b { color: var(--placed); }
+  .empty { color: var(--ink-soft); font-size: 13.5px; max-width: 42ch; margin: 0; }
+
+  .row-enter { animation: rise .34s both cubic-bezier(.2, .7, .3, 1); }
+  @keyframes rise { from { opacity: 0; transform: translateY(5px); } }
+
+  .aside { font-size: 12.5px; color: var(--ink-soft); margin: 9px 0 0; max-width: 44ch; }
+  .meta {
+    padding: 11px 18px;
+    font: 400 11.5px/1.7 var(--mono);
+    color: var(--ink-soft);
+    background: #f4f7f3;
+    border-top: 1px solid var(--rule);
+  }
+  .err { color: var(--open); font-size: 13.5px; margin: 0; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flag { transition: none; }
+    .row-enter { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <h1 id="pt-name">—</h1>
+  <dl>
+    <div><dt>MRN</dt><dd><code id="pt-mrn"></code></dd></div>
+    <div><dt>Age</dt><dd id="pt-age"></dd></div>
+    <div><dt>Born</dt><dd id="pt-dob"></dd></div>
+    <div><dt>Weight</dt><dd id="pt-wt"></dd></div>
+    <div><dt>Location</dt><dd id="pt-loc"></dd></div>
+    <div><dt>Arrived</dt><dd id="pt-arr"></dd></div>
+    <div class="allergy"><dt>Allergies</dt><dd id="pt-alg"></dd></div>
+  </dl>
+</div>
+
+<main>
+  <section class="pane" aria-labelledby="note-h">
+    <header>
+      <h2 id="note-h">Progress note</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="unsigned">Unsigned</span>
+        <button id="edit-btn" class="ghost" hidden>Edit note</button>
+        <button id="check-btn">Check note against orders</button>
+      </div>
+    </header>
+    <div id="note-host"></div>
+  </section>
+
+  <section class="pane" aria-labelledby="ord-h">
+    <header><h2 id="ord-h">Orders</h2></header>
+
+    <div class="sheet-section">
+      <h3>On the chart</h3>
+      <ul class="orders" id="chart-list"></ul>
+    </div>
+
+    <div class="sheet-section" id="nudge-host" aria-live="polite">
+      <p class="empty">Nothing checked yet. Check the note to see whether the chart carries out what it says.</p>
+    </div>
+
+    <div class="sheet-section" id="declined-host" hidden></div>
+    <div class="meta" id="meta" hidden></div>
+  </section>
+</main>
+
+<script>
+const WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight",
+               "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen"];
+const word = n => WORDS[n] ?? String(n);
+const el = (t, c) => { const n = document.createElement(t); if (c) n.className = c; return n; };
+
+const state = { patient: {}, note: "", placed: [], catalog: {}, result: null, mode: "edit" };
+
+// ---- boot -----------------------------------------------------------------
+fetch("/api/case").then(r => r.json()).then(c => {
+  state.patient = c.patient;
+  state.note = c.note;
+  state.placed = c.placed.slice();
+  c.catalog.forEach(o => state.catalog[o.code] = o.label);
+  const p = c.patient;
+  const set = (id, v) => document.getElementById(id).textContent = v;
+  set("pt-name", p.name); set("pt-mrn", p.mrn); set("pt-age", p.age_sex);
+  set("pt-dob", p.dob); set("pt-wt", p.weight); set("pt-loc", p.location);
+  set("pt-arr", p.arrived); set("pt-alg", p.allergies);
+  renderNote();
+  renderChart();
+});
+
+// ---- the note -------------------------------------------------------------
+function flaggedSentences() {
+  const map = new Map();
+  (state.result?.missing ?? []).forEach(r => {
+    if (!r.sentence_id) return;
+    if (!map.has(r.sentence_id)) map.set(r.sentence_id, []);
+    map.get(r.sentence_id).push(r.label);
+  });
+  return map;
+}
+
+function renderNote() {
+  const host = document.getElementById("note-host");
+  host.textContent = "";
+
+  if (state.mode === "edit") {
+    const ta = el("textarea");
+    ta.value = state.note;
+    ta.setAttribute("aria-label", "Progress note");
+    const grow = () => {
+      ta.style.height = "auto";
+      ta.style.height = ta.scrollHeight + "px";
+    };
+    ta.addEventListener("input", () => { state.note = ta.value; grow(); });
+    host.append(ta);
+    grow();
+    return;
+  }
+
+  const flags = flaggedSentences();
+  const body = el("div", "note-body");
+  let i = 0;
+  state.result.paragraphs.forEach(para => {
+    const p = el("p");
+    para.forEach((s, j) => {
+      if (flags.has(s.id)) {
+        const mark = el("span", "flag");
+        mark.textContent = s.text;
+        mark.style.setProperty("--d", (i++ * 0.08) + "s");
+        const orders = flags.get(s.id);
+        mark.title = orders.length > 1
+          ? `Committed here, not on the chart: ${orders.join("; ")}`
+          : `Committed here, not on the chart: ${orders[0]}`;
+        mark.dataset.sid = s.id;
+        p.append(mark);
+      } else {
+        p.append(document.createTextNode(s.text));
+      }
+      if (j < para.length - 1) p.append(document.createTextNode(" "));
+    });
+    body.append(p);
+  });
+  host.append(body);
+  requestAnimationFrame(() => body.classList.add("revealed"));
+}
+
+// ---- the order sheet ------------------------------------------------------
+function orderRow({ glyph, glyphClass, label, code, right, note }) {
+  const li = el("li");
+  const g = el("span", "glyph " + (glyphClass || ""));
+  g.textContent = glyph;
+  g.setAttribute("aria-hidden", "true");
+  const mid = el("div");
+  const l = el("span", "label");
+  l.textContent = label;
+  mid.append(l);
+  const c = el("code", "code");
+  c.textContent = code + (note ? "   " + note : "");
+  mid.append(c);
+  li.append(g, mid, right ?? el("span"));
+  return li;
+}
+
+function renderChart() {
+  const list = document.getElementById("chart-list");
+  list.textContent = "";
+  const undoc = new Set((state.result?.undocumented ?? []).map(r => r.code));
+  state.placed.forEach(code => {
+    list.append(orderRow({
+      glyph: undoc.has(code) ? "!" : "✓",
+      glyphClass: undoc.has(code) ? "gap" : "ok",
+      label: state.catalog[code] ?? code,
+      code,
+      note: undoc.has(code) ? "not in the note" : "",
+    }));
+  });
+}
+
+function addOrder(code) {
+  if (!state.placed.includes(code)) state.placed.push(code);
+  state.result.missing = state.result.missing.filter(r => r.code !== code);
+  state.result.uncertain = state.result.uncertain.filter(r => r.code !== code);
+  renderChart();
+  renderNudge();
+  renderNote();
+}
+
+function renderNudge() {
+  const host = document.getElementById("nudge-host");
+  host.textContent = "";
+  const { missing, uncertain, undocumented } = state.result;
+
+  const head = el("p", "nudge-head");
+  if (missing.length === 0) {
+    host.classList.add("resolved");
+    head.innerHTML = `<b>The chart now carries out the note.</b>`;
+    host.append(head);
+  } else {
+    host.classList.remove("resolved");
+    const n = missing.length;
+    head.innerHTML = `<b>${word(n)} order${n === 1 ? "" : "s"}</b> ${n === 1 ? "is" : "are"} `
+      + `committed in this note but ${n === 1 ? "is" : "are"} not on the chart.`;
+    host.append(head);
+
+    const ul = el("ul", "orders");
+    missing.forEach((r, i) => {
+      const btn = el("button", "add");
+      btn.textContent = "Add";
+      btn.addEventListener("click", () => addOrder(r.code));
+      const row = orderRow({
+        glyph: "+", glyphClass: "gap", label: r.label, code: r.code, right: btn,
+      });
+      row.classList.add("row-enter");
+      row.style.animationDelay = (i * 0.045) + "s";
+      row.addEventListener("mouseenter", () => lightSentence(r.sentence_id, true));
+      row.addEventListener("mouseleave", () => lightSentence(r.sentence_id, false));
+      ul.append(row);
+    });
+    host.append(ul);
+
+    const all = el("button");
+    all.textContent = `Add all ${word(n)} order${n === 1 ? "" : "s"}`;
+    all.style.marginTop = "13px";
+    all.addEventListener("click", () => missing.slice().forEach(r => addOrder(r.code)));
+    host.append(all);
+  }
+
+  if (uncertain.length) {
+    const h = el("h3");
+    h.textContent = "Possibly committed — read these yourself";
+    h.style.margin = "20px 0 9px";
+    host.append(h);
+    const ul = el("ul", "orders");
+    uncertain.forEach(r => {
+      const btn = el("button", "add");
+      btn.textContent = "Add";
+      btn.addEventListener("click", () => addOrder(r.code));
+      ul.append(orderRow({ glyph: "?", label: r.label, code: r.code, right: btn }));
+    });
+    host.append(ul);
+  }
+
+  if (undocumented.length) {
+    const p = el("p", "aside");
+    const names = undocumented.map(r => r.label).join(", ");
+    p.textContent = `${names} ${undocumented.length === 1 ? "is" : "are"} on the chart but `
+      + `${undocumented.length === 1 ? "does" : "do"} not appear in the note. Document before signing.`;
+    host.append(p);
+  }
+}
+
+function lightSentence(sid, on) {
+  if (!sid) return;
+  document.querySelectorAll(`.flag[data-sid="${sid}"]`)
+    .forEach(n => n.classList.toggle("lit", on));
+}
+
+function renderDeclined() {
+  const host = document.getElementById("declined-host");
+  const rows = state.result.declined;
+  host.hidden = rows.length === 0;
+  if (!rows.length) return;
+  host.textContent = "";
+  const h = el("h3");
+  h.textContent = "Named in the note, deliberately not ordered";
+  host.append(h);
+  const ul = el("ul", "orders");
+  rows.forEach(r => {
+    const p = el("span", "p");
+    p.textContent = `${r.mentioned.toFixed(2)} / ${r.committed.toFixed(2)}`;
+    p.title = "probability mentioned / probability committed";
+    ul.append(orderRow({ glyph: "–", label: r.label, code: r.code, right: p }));
+  });
+  host.append(ul);
+  const note = el("p", "aside");
+  note.textContent = "Each of these is named in the plan and each was read as declined, "
+    + "held or not indicated, so no order is suggested. The two numbers are how strongly "
+    + "the note refers to it, against how strongly it commits to it.";
+  host.append(note);
+}
+
+function renderMeta() {
+  const m = state.result.meta;
+  const host = document.getElementById("meta");
+  host.hidden = false;
+  host.textContent = "";
+  const parts = [
+    ["model", m.model],
+    ["questions", `${m.stage1_questions} then ${m.stage2_questions}`],
+    ["latency", `${m.stage1_ms} + ${m.stage2_ms} ms`],
+    ["input", `${m.input_tokens.toLocaleString()} tokens`],
+  ];
+  parts.forEach(([k, v]) => {
+    const row = el("div");
+    row.style.display = "flex";
+    row.style.justifyContent = "space-between";
+    row.style.gap = "18px";
+    const a = el("span"); a.textContent = k; a.style.color = "#8fa79b";
+    const b = el("span"); b.textContent = v;
+    row.append(a, b);
+    host.append(row);
+  });
+}
+
+// ---- run ------------------------------------------------------------------
+const checkBtn = document.getElementById("check-btn");
+const editBtn = document.getElementById("edit-btn");
+
+checkBtn.addEventListener("click", async () => {
+  checkBtn.disabled = true;
+  checkBtn.textContent = "Checking…";
+  try {
+    const res = await fetch("/api/check", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ note: state.note, placed: state.placed }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      const host = document.getElementById("nudge-host");
+      host.textContent = "";
+      const p = el("p", "err");
+      p.textContent = data.error;
+      host.append(p);
+      return;
+    }
+    state.result = data;
+    state.mode = "reviewed";
+    renderNote(); renderChart(); renderNudge(); renderDeclined(); renderMeta();
+    editBtn.hidden = false;
+  } finally {
+    checkBtn.disabled = false;
+    checkBtn.textContent = "Check again";
+  }
+});
+
+editBtn.addEventListener("click", () => {
+  state.mode = "edit";
+  state.result = null;
+  editBtn.hidden = true;
+  checkBtn.textContent = "Check note against orders";
+  document.getElementById("nudge-host").classList.remove("resolved");
+  document.getElementById("nudge-host").innerHTML =
+    '<p class="empty">Note edited. Check it again to reconcile against the chart.</p>';
+  document.getElementById("declined-host").hidden = true;
+  document.getElementById("meta").hidden = true;
+  renderNote(); renderChart();
+});
+</script>
+</body>
+</html>

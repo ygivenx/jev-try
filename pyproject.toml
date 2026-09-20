@@ -1,0 +1,19 @@
+[project]
+name = "jev-try"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.141.1",
+    "python-dotenv>=1.2.3",
+    "typesafe-sdk>=0.7.0",
+    "uvicorn>=0.53.0",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.3.0",
+    "jupyterlab>=4.6.3",
+    "jupytext>=1.19.5",
+    "nbconvert>=7.17.1",
+    "pandas>=3.0.6",
+]
