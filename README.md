@@ -17,6 +17,11 @@ sentence each nudge points at, the latency and the token count all came back fro
 `api.typesafe.ai`; nothing is mocked. You can work the whole flow, adding orders
 until the chart carries out the note.
 
+Every judgment carries its probability, and **How this was judged** at the foot of
+the orders column opens onto the working: the thresholds, where all sixteen orders
+landed and why, the two questions exactly as they were sent, the sentence
+distribution behind one highlight, and what the check cost.
+
 What it cannot do is check a note you write yourself, because that needs a key and a
 key needs a server. See [why](#why-there-is-a-server-at-all).
 
@@ -40,10 +45,25 @@ Separating the two is what lets the UI distinguish *never came up* from
 *considered and ruled out*. A nudge to order a CT the physician just ruled out is
 the kind that gets the whole feature switched off.
 
+The pair of probabilities and the chart then decide the bucket, in Python, with no
+model involvement. Committed at or above **0.70** counts as a commitment; **0.45 to
+0.70** is too close to call, so it is shown but not nudged; below that, an order
+still mentioned at **0.60** or more was considered and set aside.
+
+| bucket | committed | on the chart | what the page does |
+| --- | --- | --- | --- |
+| `missing` | ≥ 0.70 | no | nudge, with the sentence that commits to it |
+| `uncertain` | 0.45–0.70 | no | list it, say it is a close call |
+| `matched` | ≥ 0.45 | yes | tick it |
+| `undocumented` | < 0.45 | yes | ordered but unexplained — document before signing |
+| `declined` | < 0.45, mentioned ≥ 0.60 | no | name it as deliberately not ordered |
+| `silent` | < 0.45, mentioned < 0.60 | no | count it, say nothing more |
+
 A second request then asks, for each genuinely missing order, **which sentence**
 commits to it — with the note's own sentences as the options. The highlight is
 therefore always a span the physician actually wrote, selected rather than
-generated.
+generated. The response keeps the top three sentence probabilities, so a decisive
+pick (`s9` at 1.00) is distinguishable from a coin toss between two sentences.
 
 Per check: 32 questions, then one per missing order. Around 450 ms and ~8,000
 input tokens, about $0.0003.
@@ -132,7 +152,10 @@ curl -s localhost:8100/api/case > /tmp/case.json
 curl -s -X POST localhost:8100/api/check -H 'content-type: application/json' -d '{}' > /tmp/check.json
 ```
 
-then rebuild `example.json` as `{recorded_at, note, case, check}`.
+then rebuild `example.json` as `{recorded_at, note, case, check}`. Check that
+`check.asked.order.code` is the highest-`committed` row in `check.missing`, since the
+explainer shows those questions next to that row and the two would otherwise
+disagree.
 
 ## Not for clinical use
 

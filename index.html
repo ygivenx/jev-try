@@ -196,6 +196,32 @@
   }
   .strip a { color: inherit; text-decoration-thickness: 1px; }
 
+  /* the working-out, folded away until asked for */
+  details.explain { border-top: 1px solid var(--rule); background: #f8faf7; }
+  details.explain > summary {
+    padding: 12px 18px;
+    font: 500 12.5px/1 var(--sans);
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  details.explain[open] > summary { color: var(--ink); }
+  details.explain > summary:focus-visible { outline: 2px solid var(--open); outline-offset: -2px; }
+  .explain-body { padding: 2px 18px 20px; }
+  .explain-body h4 { font: 500 12.5px/1 var(--sans); color: var(--ink-soft); margin: 18px 0 8px; }
+  .explain-body h4:first-child { margin-top: 6px; }
+  .explain-body p { font-size: 13px; line-height: 1.55; max-width: 48ch; margin: 0 0 9px; }
+  pre.mono {
+    font: 400 11px/1.6 var(--mono);
+    background: #fff;
+    border: 1px solid var(--rule);
+    padding: 10px 11px;
+    margin: 0 0 9px;
+    overflow-x: auto;
+    color: var(--ink);
+  }
+  pre.mono.wrap { white-space: pre-wrap; word-break: break-word; }
+  .rowright { display: flex; align-items: baseline; gap: 11px; }
+
   /* shown only when the server has no key of its own */
   .keyform label { display: block; font-size: 13px; margin-bottom: 7px; }
   .keyform input {
@@ -261,6 +287,7 @@
     </div>
 
     <div class="sheet-section" id="declined-host" hidden></div>
+    <div id="explain-host" hidden></div>
     <div class="meta" id="meta" hidden></div>
   </section>
 </main>
@@ -269,6 +296,10 @@
 const WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight",
                "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen"];
 const word = n => WORDS[n] ?? String(n);
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+// Several order names contain a comma ("ECG, 12-lead"), which makes a comma-joined
+// list unreadable. Semicolons when that happens.
+const listNames = names => names.join(names.some(n => n.includes(",")) ? "; " : ", ");
 const el = (t, c) => { const n = document.createElement(t); if (c) n.className = c; return n; };
 
 const state = {
@@ -425,25 +456,55 @@ function orderRow({ glyph, glyphClass, label, code, right, note }) {
   return li;
 }
 
+const BUCKETS = ["missing", "uncertain", "matched", "undocumented", "declined", "silent"];
+
+// Every order carries its two probabilities whichever bucket it landed in.
+function resultRow(code) {
+  if (!state.result) return null;
+  for (const b of BUCKETS) {
+    const hit = (state.result[b] ?? []).find(r => r.code === code);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function probSpan(value, title) {
+  const p = el("span", "p");
+  p.textContent = value.toFixed(2);
+  p.title = title;
+  return p;
+}
+
 function renderChart() {
   const list = document.getElementById("chart-list");
   list.textContent = "";
   const undoc = new Set((state.result?.undocumented ?? []).map(r => r.code));
   state.placed.forEach(code => {
+    const row = resultRow(code);
     list.append(orderRow({
       glyph: undoc.has(code) ? "!" : "✓",
       glyphClass: undoc.has(code) ? "gap" : "ok",
       label: state.catalog[code] ?? code,
       code,
       note: undoc.has(code) ? "not in the note" : "",
+      right: row ? probSpan(row.committed, "how strongly the note commits to this order") : null,
     }));
   });
 }
 
 function addOrder(code) {
   if (!state.placed.includes(code)) state.placed.push(code);
+  // Move it rather than drop it: it really is matched now, and keeping the row
+  // means the chart can still show what the note said about it.
+  const row = state.result.missing.find(r => r.code === code)
+           ?? state.result.uncertain.find(r => r.code === code);
   state.result.missing = state.result.missing.filter(r => r.code !== code);
   state.result.uncertain = state.result.uncertain.filter(r => r.code !== code);
+  if (row && !state.result.matched.some(r => r.code === code)) {
+    row.bucket = "matched";
+    row.on_chart = true;
+    state.result.matched.push(row);
+  }
   renderChart();
   renderNudge();
   renderNote();
@@ -462,7 +523,7 @@ function renderNudge() {
   } else {
     host.classList.remove("resolved");
     const n = missing.length;
-    head.innerHTML = `<b>${word(n)} order${n === 1 ? "" : "s"}</b> ${n === 1 ? "is" : "are"} `
+    head.innerHTML = `<b>${cap(word(n))} order${n === 1 ? "" : "s"}</b> ${n === 1 ? "is" : "are"} `
       + `committed in this note but ${n === 1 ? "is" : "are"} not on the chart.`;
     host.append(head);
 
@@ -471,9 +532,17 @@ function renderNudge() {
       const btn = el("button", "add");
       btn.textContent = "Add";
       btn.addEventListener("click", () => addOrder(r.code));
+      const right = el("div", "rowright");
+      right.append(probSpan(r.committed, "how strongly the note commits to this order"), btn);
       const row = orderRow({
-        glyph: "+", glyphClass: "gap", label: r.label, code: r.code, right: btn,
+        glyph: "+", glyphClass: "gap", label: r.label, code: r.code, right,
+        note: r.sentence_id ? "from " + r.sentence_id : "no sentence identified",
       });
+      if (r.locate_top && r.locate_top.length > 1) {
+        const [best, next] = r.locate_top;
+        row.title = `Committed at ${r.committed.toFixed(2)}, mentioned at ${r.mentioned.toFixed(2)}. `
+          + `Sentence ${best[0]} chosen at ${best[1].toFixed(2)}, next best ${next[0]} at ${next[1].toFixed(2)}.`;
+      }
       row.classList.add("row-enter");
       row.style.animationDelay = (i * 0.045) + "s";
       row.addEventListener("mouseenter", () => lightSentence(r.sentence_id, true));
@@ -499,16 +568,30 @@ function renderNudge() {
       const btn = el("button", "add");
       btn.textContent = "Add";
       btn.addEventListener("click", () => addOrder(r.code));
-      ul.append(orderRow({ glyph: "?", label: r.label, code: r.code, right: btn }));
+      const right = el("div", "rowright");
+      right.append(probSpan(r.committed, "how strongly the note commits to this order"), btn);
+      ul.append(orderRow({ glyph: "?", label: r.label, code: r.code, right }));
     });
     host.append(ul);
   }
 
   if (undocumented.length) {
     const p = el("p", "aside");
-    const names = undocumented.map(r => r.label).join(", ");
+    const names = listNames(undocumented.map(r => r.label));
     p.textContent = `${names} ${undocumented.length === 1 ? "is" : "are"} on the chart but `
       + `${undocumented.length === 1 ? "does" : "do"} not appear in the note. Document before signing.`;
+    host.append(p);
+  }
+
+  // The quiet majority. Worth showing once, so it is clear the whole catalogue
+  // was asked about and most of it simply had nothing to say.
+  const silent = state.result.silent ?? [];
+  if (silent.length) {
+    const p = el("p", "aside");
+    const one = silent.length === 1;
+    p.textContent = cap(`${word(silent.length)} other order${one ? "" : "s"} in the catalogue `)
+      + `${one ? "was" : "were"} checked and the note neither commits to ${one ? "it" : "them"} `
+      + `nor mentions ${one ? "it" : "them"}: ${listNames(silent.map(r => r.label))}.`;
     host.append(p);
   }
 }
@@ -541,6 +624,81 @@ function renderDeclined() {
     + "held or not indicated, so no order is suggested. The two numbers are how strongly "
     + "the note refers to it, against how strongly it commits to it.";
   host.append(note);
+}
+
+const BUCKET_RULES = {
+  missing: "committed, and not on the chart",
+  matched: "committed, and already on the chart",
+  uncertain: "too close to call, so shown rather than nudged",
+  undocumented: "on the chart, but the note does not commit to it",
+  declined: "mentioned, then declined, held or ruled out",
+  silent: "neither committed nor mentioned",
+};
+
+function renderExplainer() {
+  const host = document.getElementById("explain-host");
+  const r = state.result;
+  if (!r.thresholds || !r.asked) { host.hidden = true; return; }
+  host.hidden = false;
+  host.textContent = "";
+
+  const d = el("details", "explain");
+  const summary = el("summary");
+  summary.textContent = "How this was judged";
+  d.append(summary);
+  const body = el("div", "explain-body");
+  const h = text => { const n = el("h4"); n.textContent = text; body.append(n); };
+  const p = text => { const n = el("p"); n.textContent = text; body.append(n); };
+  const pre = (text, wrap) => {
+    const n = el("pre", "mono" + (wrap ? " wrap" : ""));
+    n.textContent = text;
+    body.append(n);
+  };
+
+  const t = r.thresholds;
+  h("Two questions per order, then arithmetic");
+  p(`Every order in the catalogue gets the same pair of questions about the note: `
+    + `does the plan commit to it, and does the note refer to it at all. Both come back `
+    + `as probabilities. Nothing after that is the model's decision.`);
+  p(`At or above ${t.committed_firm.toFixed(2)} committed counts as a commitment. `
+    + `Between ${t.committed_maybe.toFixed(2)} and ${t.committed_firm.toFixed(2)} is too `
+    + `close to act on, so it is shown for you to read instead of nudged. Below that, `
+    + `an order still mentioned at ${t.mentioned.toFixed(2)} or more was considered and `
+    + `set aside, which is why declining a CT produces no nudge.`);
+
+  const total = BUCKETS.reduce((n, b) => n + (r[b] ?? []).length, 0);
+  h(`Where all ${total} orders landed`);
+  pre(BUCKETS
+    .map(b => `${b.padEnd(13)}${String((r[b] ?? []).length).padStart(2)}   ${BUCKET_RULES[b]}`)
+    .join("\n"));
+
+  h(`What the model was asked, for ${r.asked.order.label}`);
+  p(`Verbatim, as sent. The order is described to the model in clinical words rather `
+    + `than by its code, and the false case is spelled out because that is where `
+    + `"mentioned but declined" has to land.`);
+  pre(JSON.stringify(r.asked.committed, null, 1), true);
+  pre(JSON.stringify(r.asked.mentioned, null, 1), true);
+
+  h("Finding the sentence");
+  p(`A second request asks which sentence carries each commitment. The options are the `
+    + `note's own sentences, so the answer is picked from the text and never written. `
+    + `The runners-up show whether it was decisive.`);
+  pre(JSON.stringify(r.asked.locate, null, 1), true);
+  const ranked = (r.missing[0] ?? r.matched.find(x => x.locate_top));
+  if (ranked?.locate_top) {
+    pre(`${ranked.label}\n` + ranked.locate_top
+      .map(([sid, prob], i) => `  ${i === 0 ? "chosen " : "       "}${sid.padEnd(4)}${prob.toFixed(3)}`)
+      .join("\n"));
+  }
+
+  h("Cost of one check");
+  p(`${r.meta.stage1_questions} questions in one request, then ${r.meta.stage2_questions} in a `
+    + `second, for ${r.meta.input_tokens.toLocaleString()} input tokens. At $0.042 per million `
+    + `input tokens, and no charge for output, that is about `
+    + `$${(r.meta.input_tokens * 0.042 / 1e6).toFixed(4)}.`);
+
+  d.append(body);
+  host.append(d);
 }
 
 function renderMeta() {
@@ -580,8 +738,9 @@ function showError(message) {
 
 function show(result, { editable }) {
   state.result = result;
+  state.result.matched ??= [];
   state.mode = "reviewed";
-  renderNote(); renderChart(); renderNudge(); renderDeclined(); renderMeta();
+  renderNote(); renderChart(); renderNudge(); renderDeclined(); renderExplainer(); renderMeta();
   editBtn.hidden = !editable;
 }
 
@@ -625,6 +784,7 @@ editBtn.addEventListener("click", () => {
   document.getElementById("nudge-host").innerHTML =
     '<p class="empty">Note edited. Check it again to reconcile against the chart.</p>';
   document.getElementById("declined-host").hidden = true;
+  document.getElementById("explain-host").hidden = true;
   document.getElementById("meta").hidden = true;
   renderNote(); renderChart();
 });

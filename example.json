@@ -83,7 +83,8 @@
     "code": "MB-URI",
     "label": "Urinalysis with culture"
    }
-  ]
+  ],
+  "needs_key": false
  },
  "check": {
   "paragraphs": [
@@ -162,64 +163,192 @@
     "label": "Lactate, serum",
     "committed": 0.99,
     "mentioned": 0.99,
+    "on_chart": false,
+    "bucket": "missing",
     "sentence_id": "s9",
-    "locate_confidence": 1.0
+    "locate_confidence": 1.0,
+    "locate_top": [
+     [
+      "s9",
+      1.0
+     ],
+     [
+      "s15",
+      0.0
+     ],
+     [
+      "s10",
+      0.0
+     ]
+    ]
    },
    {
     "code": "MB-RVP",
     "label": "Respiratory viral panel",
     "committed": 0.99,
     "mentioned": 0.99,
+    "on_chart": false,
+    "bucket": "missing",
     "sentence_id": "s12",
-    "locate_confidence": 1.0
+    "locate_confidence": 1.0,
+    "locate_top": [
+     [
+      "s12",
+      1.0
+     ],
+     [
+      "s15",
+      0.0
+     ],
+     [
+      "s10",
+      0.0
+     ]
+    ]
    },
    {
     "code": "MB-BC2",
     "label": "Blood cultures, two sets",
     "committed": 0.98,
     "mentioned": 0.98,
+    "on_chart": false,
+    "bucket": "missing",
     "sentence_id": "s7",
-    "locate_confidence": 1.0
+    "locate_confidence": 1.0,
+    "locate_top": [
+     [
+      "s7",
+      1.0
+     ],
+     [
+      "s15",
+      0.0
+     ],
+     [
+      "s10",
+      0.0
+     ]
+    ]
    },
    {
     "code": "IV-CRY",
     "label": "Crystalloid bolus, 30 mL/kg",
     "committed": 0.98,
     "mentioned": 0.98,
+    "on_chart": false,
+    "bucket": "missing",
     "sentence_id": "s10",
-    "locate_confidence": 1.0
+    "locate_confidence": 1.0,
+    "locate_top": [
+     [
+      "s10",
+      1.0
+     ],
+     [
+      "s15",
+      0.0
+     ],
+     [
+      "s5",
+      0.0
+     ]
+    ]
+   },
+   {
+    "code": "RX-CTX",
+    "label": "Ceftriaxone 1 g IV",
+    "committed": 0.97,
+    "mentioned": 0.89,
+    "on_chart": false,
+    "bucket": "missing",
+    "sentence_id": "s7",
+    "locate_confidence": 0.99,
+    "locate_top": [
+     [
+      "s7",
+      0.99
+     ],
+     [
+      "none",
+      0.01
+     ],
+     [
+      "s15",
+      0.0
+     ]
+    ]
    },
    {
     "code": "RX-AZI",
     "label": "Azithromycin 500 mg IV",
     "committed": 0.97,
     "mentioned": 0.99,
+    "on_chart": false,
+    "bucket": "missing",
     "sentence_id": "s7",
-    "locate_confidence": 1.0
+    "locate_confidence": 1.0,
+    "locate_top": [
+     [
+      "s7",
+      1.0
+     ],
+     [
+      "s15",
+      0.0
+     ],
+     [
+      "s10",
+      0.0
+     ]
+    ]
    },
    {
-    "code": "RX-CTX",
-    "label": "Ceftriaxone 1 g IV",
-    "committed": 0.96,
-    "mentioned": 0.89,
-    "sentence_id": "s7",
-    "locate_confidence": 0.99
+    "code": "RT-O2",
+    "label": "Oxygen, titrated to SpO2 > 92%",
+    "committed": 0.97,
+    "mentioned": 0.98,
+    "on_chart": false,
+    "bucket": "missing",
+    "sentence_id": "s11",
+    "locate_confidence": 1.0,
+    "locate_top": [
+     [
+      "s11",
+      1.0
+     ],
+     [
+      "s15",
+      0.0
+     ],
+     [
+      "s10",
+      0.0
+     ]
+    ]
    },
    {
     "code": "CH-BMP",
     "label": "Renal panel",
     "committed": 0.96,
     "mentioned": 0.95,
+    "on_chart": false,
+    "bucket": "missing",
     "sentence_id": "s9",
-    "locate_confidence": 1.0
-   },
-   {
-    "code": "RT-O2",
-    "label": "Oxygen, titrated to SpO2 > 92%",
-    "committed": 0.96,
-    "mentioned": 0.98,
-    "sentence_id": "s11",
-    "locate_confidence": 1.0
+    "locate_confidence": 1.0,
+    "locate_top": [
+     [
+      "s9",
+      1.0
+     ],
+     [
+      "s15",
+      0.0
+     ],
+     [
+      "s10",
+      0.0
+     ]
+    ]
    }
   ],
   "uncertain": [],
@@ -228,13 +357,17 @@
     "code": "IM-CXR",
     "label": "Chest X-ray, portable",
     "committed": 0.98,
-    "mentioned": 0.97
+    "mentioned": 0.98,
+    "on_chart": true,
+    "bucket": "matched"
    },
    {
     "code": "HM-CBC",
     "label": "Full blood count",
-    "committed": 0.99,
-    "mentioned": 0.98
+    "committed": 0.98,
+    "mentioned": 0.98,
+    "on_chart": true,
+    "bucket": "matched"
    }
   ],
   "undocumented": [
@@ -242,7 +375,9 @@
     "code": "CH-TRP",
     "label": "Troponin I",
     "committed": 0.03,
-    "mentioned": 0.02
+    "mentioned": 0.02,
+    "on_chart": true,
+    "bucket": "undocumented"
    }
   ],
   "declined": [
@@ -250,23 +385,97 @@
     "code": "RX-VAN",
     "label": "Vancomycin IV",
     "committed": 0.04,
-    "mentioned": 0.97
+    "mentioned": 0.96,
+    "on_chart": false,
+    "bucket": "declined"
    },
    {
     "code": "IM-CTC",
     "label": "CT chest with contrast",
     "committed": 0.03,
-    "mentioned": 0.99
+    "mentioned": 0.99,
+    "on_chart": false,
+    "bucket": "declined"
    }
   ],
+  "silent": [
+   {
+    "code": "CH-CRP",
+    "label": "C-reactive protein",
+    "committed": 0.03,
+    "mentioned": 0.02,
+    "on_chart": false,
+    "bucket": "silent"
+   },
+   {
+    "code": "CD-ECG",
+    "label": "ECG, 12-lead",
+    "committed": 0.03,
+    "mentioned": 0.02,
+    "on_chart": false,
+    "bucket": "silent"
+   },
+   {
+    "code": "MB-URI",
+    "label": "Urinalysis with culture",
+    "committed": 0.03,
+    "mentioned": 0.02,
+    "on_chart": false,
+    "bucket": "silent"
+   }
+  ],
+  "thresholds": {
+   "committed_firm": 0.7,
+   "committed_maybe": 0.45,
+   "mentioned": 0.6
+  },
+  "asked": {
+   "order": {
+    "code": "CH-LAC",
+    "label": "Lactate, serum",
+    "described_as": "a serum lactate level"
+   },
+   "state": {
+    "note": "<the note, verbatim>"
+   },
+   "committed": {
+    "type": "noul",
+    "instructions": "Does the plan in `note` commit to ordering a serum lactate level?",
+    "criteria": {
+     "true": "The note states an intention, plan or instruction to order, send, start or give it.",
+     "false": {
+      "what": "The note does not commit to it.",
+      "includes": [
+       "it is not mentioned at all",
+       "it is explicitly declined, not indicated, or withheld",
+       "it is deferred to a condition that has not happened",
+       "it is described as already done elsewhere"
+      ]
+     }
+    }
+   },
+   "mentioned": {
+    "type": "noul",
+    "instructions": "Does `note` refer to a serum lactate level anywhere at all, in any way?",
+    "criteria": {
+     "true": "It is named or clearly described, including to rule it out, decline it or defer it.",
+     "false": "It does not appear in the note in any form."
+    }
+   },
+   "locate": {
+    "type": "choice",
+    "instructions": "Which sentence commits to ordering a serum lactate level?",
+    "criteria": "<every sentence of the note, keyed s1..s15, plus 'none'>"
+   }
+  },
   "meta": {
    "model": "jev-1.13.0",
    "questions": 40,
    "stage1_questions": 32,
    "stage2_questions": 8,
-   "stage1_ms": 258,
-   "stage2_ms": 179,
-   "total_ms": 450,
+   "stage1_ms": 272,
+   "stage2_ms": 157,
+   "total_ms": 455,
    "input_tokens": 8068
   }
  }
