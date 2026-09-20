@@ -9,6 +9,17 @@ judgments with calibrated probabilities rather than text. Every threshold, every
 diff and every line of copy lives in Python; the model only answers questions about
 prose.
 
+## See it without installing anything
+
+**[ygivenx.github.io/jev-try](https://ygivenx.github.io/jev-try/)** — a static copy
+that replays one real response, committed as `example.json`. The probabilities, the
+sentence each nudge points at, the latency and the token count all came back from
+`api.typesafe.ai`; nothing is mocked. You can work the whole flow, adding orders
+until the chart carries out the note.
+
+What it cannot do is check a note you write yourself, because that needs a key and a
+key needs a server. See [why](#why-there-is-a-server-at-all).
+
 ## The one design decision worth reading
 
 A naive version asks "which orders are missing?" and nudges for anything the note
@@ -80,22 +91,48 @@ unchanged — set `TYPESAFE_API_KEY` as a secret there rather than baking it in.
 
 ## Why there is a server at all
 
-GitHub Pages would be simpler, and it does not work here. The TypeSafe API
-authenticates with a bearer token and offers no publishable or domain-scoped key,
-so a static page would have to ship the secret to the browser — where, in a public
-repo, it gets scraped and billed to you. The key stays server-side and the browser
-only ever talks to `/api/check`. With no key set, the UI reports that rather than
-failing silently.
+A static page asking each visitor for their own key would be the neat answer, and
+the API does not allow it. A CORS preflight to `POST /v1/systemone` returns **400
+with no `access-control-allow-origin` header**, for every origin tried —
+`typesafe.ai` and `localhost` included. Browsers require a 2xx preflight *and* a
+matching allow-origin, so no browser can call the API directly, whoever's key it is.
+There is also no publishable or domain-scoped key type; auth is a bearer token, and
+the JavaScript SDK targets Node 20+.
+
+So the browser talks to `/api/check` and the key stays server-side. Two ways to
+supply it:
+
+- **`TYPESAFE_API_KEY` in the environment** — a Codespaces secret, `.env`, or your
+  host's secret store.
+- **Typed into the page** — if the server starts without a key, the UI says so and
+  offers a field. That key is held in the browser tab, sent to your own server for
+  that request, and never stored. It means you can hand someone a running
+  deployment without handing over your key.
+
+With neither, the UI reports the reason rather than failing silently.
 
 ## Layout
 
 ```
 app.py                      catalogue, thresholds, the two Jev stages, the diff
-index.html                  the whole frontend, no build step
+index.html                  the whole frontend, no build step; works with or
+                            without a server behind it
+example.json                one real recorded response, for the static copy
 Dockerfile                  self-contained image
 .devcontainer/              Codespaces: secret wiring and auto-start
 .github/workflows/build.yml builds the image, checks it serves and shuts down
+.github/workflows/pages.yml publishes index.html + example.json to Pages
 ```
+
+To re-record the example after changing the note or the catalogue, run the server
+with a key and save a real response:
+
+```sh
+curl -s localhost:8100/api/case > /tmp/case.json
+curl -s -X POST localhost:8100/api/check -H 'content-type: application/json' -d '{}' > /tmp/check.json
+```
+
+then rebuild `example.json` as `{recorded_at, note, case, check}`.
 
 ## Not for clinical use
 

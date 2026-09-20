@@ -1,0 +1,273 @@
+{
+ "recorded_at": "2026-09-20",
+ "note": "A real, unedited response from api.typesafe.ai, captured by running app.py.",
+ "case": {
+  "patient": {
+   "name": "OKONKWO, Daniel",
+   "mrn": "4417092",
+   "age_sex": "62 y  M",
+   "dob": "14 Mar 1964",
+   "location": "ED Bay 4",
+   "arrived": "03:12",
+   "weight": "84 kg",
+   "allergies": "Penicillin \u2014 rash (childhood)"
+  },
+  "note": "62M, three days of productive cough with rusty sputum, fever to 38.9, now increasingly short of breath at rest. Ex-smoker, no regular medications.\n\nOn examination he looks unwell and is using accessory muscles. RR 26, SpO2 90% on room air, HR 112, BP 104/62. Coarse crackles and dullness at the right base.\n\nImpression: community-acquired pneumonia, right lower lobe, with sepsis physiology.\n\nPlan: blood cultures from two sites before any antibiotics, then ceftriaxone and azithromycin. Portable chest film at the bedside. Send a lactate and repeat it in two hours, along with a full blood count and renal panel. Start 30 mL/kg crystalloid now and reassess his perfusion. Titrate oxygen to keep saturations above 92 percent. Send a respiratory viral panel including influenza. CT chest is not indicated at this stage. Holding vancomycin unless he deteriorates or cultures suggest MRSA. Admit under medicine.",
+  "placed": [
+   "IM-CXR",
+   "HM-CBC",
+   "CH-TRP"
+  ],
+  "catalog": [
+   {
+    "code": "MB-BC2",
+    "label": "Blood cultures, two sets"
+   },
+   {
+    "code": "RX-CTX",
+    "label": "Ceftriaxone 1 g IV"
+   },
+   {
+    "code": "RX-AZI",
+    "label": "Azithromycin 500 mg IV"
+   },
+   {
+    "code": "RX-VAN",
+    "label": "Vancomycin IV"
+   },
+   {
+    "code": "IM-CXR",
+    "label": "Chest X-ray, portable"
+   },
+   {
+    "code": "IM-CTC",
+    "label": "CT chest with contrast"
+   },
+   {
+    "code": "CH-LAC",
+    "label": "Lactate, serum"
+   },
+   {
+    "code": "HM-CBC",
+    "label": "Full blood count"
+   },
+   {
+    "code": "CH-BMP",
+    "label": "Renal panel"
+   },
+   {
+    "code": "CH-CRP",
+    "label": "C-reactive protein"
+   },
+   {
+    "code": "CH-TRP",
+    "label": "Troponin I"
+   },
+   {
+    "code": "IV-CRY",
+    "label": "Crystalloid bolus, 30 mL/kg"
+   },
+   {
+    "code": "RT-O2",
+    "label": "Oxygen, titrated to SpO2 > 92%"
+   },
+   {
+    "code": "MB-RVP",
+    "label": "Respiratory viral panel"
+   },
+   {
+    "code": "CD-ECG",
+    "label": "ECG, 12-lead"
+   },
+   {
+    "code": "MB-URI",
+    "label": "Urinalysis with culture"
+   }
+  ]
+ },
+ "check": {
+  "paragraphs": [
+   [
+    {
+     "id": "s1",
+     "text": "62M, three days of productive cough with rusty sputum, fever to 38.9, now increasingly short of breath at rest."
+    },
+    {
+     "id": "s2",
+     "text": "Ex-smoker, no regular medications."
+    }
+   ],
+   [
+    {
+     "id": "s3",
+     "text": "On examination he looks unwell and is using accessory muscles."
+    },
+    {
+     "id": "s4",
+     "text": "RR 26, SpO2 90% on room air, HR 112, BP 104/62."
+    },
+    {
+     "id": "s5",
+     "text": "Coarse crackles and dullness at the right base."
+    }
+   ],
+   [
+    {
+     "id": "s6",
+     "text": "Impression: community-acquired pneumonia, right lower lobe, with sepsis physiology."
+    }
+   ],
+   [
+    {
+     "id": "s7",
+     "text": "Plan: blood cultures from two sites before any antibiotics, then ceftriaxone and azithromycin."
+    },
+    {
+     "id": "s8",
+     "text": "Portable chest film at the bedside."
+    },
+    {
+     "id": "s9",
+     "text": "Send a lactate and repeat it in two hours, along with a full blood count and renal panel."
+    },
+    {
+     "id": "s10",
+     "text": "Start 30 mL/kg crystalloid now and reassess his perfusion."
+    },
+    {
+     "id": "s11",
+     "text": "Titrate oxygen to keep saturations above 92 percent."
+    },
+    {
+     "id": "s12",
+     "text": "Send a respiratory viral panel including influenza."
+    },
+    {
+     "id": "s13",
+     "text": "CT chest is not indicated at this stage."
+    },
+    {
+     "id": "s14",
+     "text": "Holding vancomycin unless he deteriorates or cultures suggest MRSA."
+    },
+    {
+     "id": "s15",
+     "text": "Admit under medicine."
+    }
+   ]
+  ],
+  "missing": [
+   {
+    "code": "CH-LAC",
+    "label": "Lactate, serum",
+    "committed": 0.99,
+    "mentioned": 0.99,
+    "sentence_id": "s9",
+    "locate_confidence": 1.0
+   },
+   {
+    "code": "MB-RVP",
+    "label": "Respiratory viral panel",
+    "committed": 0.99,
+    "mentioned": 0.99,
+    "sentence_id": "s12",
+    "locate_confidence": 1.0
+   },
+   {
+    "code": "MB-BC2",
+    "label": "Blood cultures, two sets",
+    "committed": 0.98,
+    "mentioned": 0.98,
+    "sentence_id": "s7",
+    "locate_confidence": 1.0
+   },
+   {
+    "code": "IV-CRY",
+    "label": "Crystalloid bolus, 30 mL/kg",
+    "committed": 0.98,
+    "mentioned": 0.98,
+    "sentence_id": "s10",
+    "locate_confidence": 1.0
+   },
+   {
+    "code": "RX-AZI",
+    "label": "Azithromycin 500 mg IV",
+    "committed": 0.97,
+    "mentioned": 0.99,
+    "sentence_id": "s7",
+    "locate_confidence": 1.0
+   },
+   {
+    "code": "RX-CTX",
+    "label": "Ceftriaxone 1 g IV",
+    "committed": 0.96,
+    "mentioned": 0.89,
+    "sentence_id": "s7",
+    "locate_confidence": 0.99
+   },
+   {
+    "code": "CH-BMP",
+    "label": "Renal panel",
+    "committed": 0.96,
+    "mentioned": 0.95,
+    "sentence_id": "s9",
+    "locate_confidence": 1.0
+   },
+   {
+    "code": "RT-O2",
+    "label": "Oxygen, titrated to SpO2 > 92%",
+    "committed": 0.96,
+    "mentioned": 0.98,
+    "sentence_id": "s11",
+    "locate_confidence": 1.0
+   }
+  ],
+  "uncertain": [],
+  "matched": [
+   {
+    "code": "IM-CXR",
+    "label": "Chest X-ray, portable",
+    "committed": 0.98,
+    "mentioned": 0.97
+   },
+   {
+    "code": "HM-CBC",
+    "label": "Full blood count",
+    "committed": 0.99,
+    "mentioned": 0.98
+   }
+  ],
+  "undocumented": [
+   {
+    "code": "CH-TRP",
+    "label": "Troponin I",
+    "committed": 0.03,
+    "mentioned": 0.02
+   }
+  ],
+  "declined": [
+   {
+    "code": "RX-VAN",
+    "label": "Vancomycin IV",
+    "committed": 0.04,
+    "mentioned": 0.97
+   },
+   {
+    "code": "IM-CTC",
+    "label": "CT chest with contrast",
+    "committed": 0.03,
+    "mentioned": 0.99
+   }
+  ],
+  "meta": {
+   "model": "jev-1.13.0",
+   "questions": 40,
+   "stage1_questions": 32,
+   "stage2_questions": 8,
+   "stage1_ms": 258,
+   "stage2_ms": 179,
+   "total_ms": 450,
+   "input_tokens": 8068
+  }
+ }
+}

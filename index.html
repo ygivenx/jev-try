@@ -184,6 +184,30 @@
     border-top: 1px solid var(--rule);
   }
   .err { color: var(--open); font-size: 13.5px; margin: 0; }
+
+  /* shown only on the static Pages copy, which replays one recorded response */
+  .strip {
+    margin: 0;
+    padding: 9px clamp(16px, 3vw, 34px);
+    background: var(--open-wash);
+    border-bottom: 1px solid #ddc0a8;
+    color: #6b3a14;
+    font-size: 13px;
+  }
+  .strip a { color: inherit; text-decoration-thickness: 1px; }
+
+  /* shown only when the server has no key of its own */
+  .keyform label { display: block; font-size: 13px; margin-bottom: 7px; }
+  .keyform input {
+    width: 100%;
+    font: 400 12.5px/1 var(--mono);
+    padding: 8px 9px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .keyform input:focus { outline: 2px solid var(--ink); outline-offset: -2px; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
   @media (prefers-reduced-motion: reduce) {
@@ -207,6 +231,8 @@
   </dl>
 </div>
 
+<p class="strip" id="strip" hidden></p>
+
 <main>
   <section class="pane" aria-labelledby="note-h">
     <header>
@@ -222,6 +248,8 @@
 
   <section class="pane" aria-labelledby="ord-h">
     <header><h2 id="ord-h">Orders</h2></header>
+
+    <div class="sheet-section keyform" id="key-host" hidden></div>
 
     <div class="sheet-section">
       <h3>On the chart</h3>
@@ -243,10 +271,52 @@ const WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eig
 const word = n => WORDS[n] ?? String(n);
 const el = (t, c) => { const n = document.createElement(t); if (c) n.className = c; return n; };
 
-const state = { patient: {}, note: "", placed: [], catalog: {}, result: null, mode: "edit" };
+const state = {
+  patient: {}, note: "", placed: [], catalog: {}, result: null,
+  mode: "edit",
+  live: true,      // false when this is the static copy with no server behind it
+  recorded: null,  // the saved response, in static mode
+  needsKey: false, // server is running but has no key of its own
+  apiKey: "",      // held in this tab only, never stored
+};
 
 // ---- boot -----------------------------------------------------------------
-fetch("/api/case").then(r => r.json()).then(c => {
+// The same file serves two situations: with app.py behind it, and as a static
+// page on GitHub Pages. The Pages build sets window.STATIC, so the published page
+// goes straight to the recording; asking the server is the fallback for anyone
+// opening this file without one.
+(async function boot() {
+  if (!window.STATIC) {
+    try {
+      const res = await fetch("/api/case");
+      if (!res.ok) throw new Error("no server");
+      const c = await res.json();
+      state.needsKey = !!c.needs_key;
+      start(c);
+      if (state.needsKey) renderKeyForm();
+      return;
+    } catch {
+      /* fall through to the recording */
+    }
+  }
+  const ex = await (await fetch("./example.json")).json();
+  state.live = false;
+  state.recorded = ex;
+  state.mode = "prose";
+  start(ex.case);
+  const strip = document.getElementById("strip");
+  strip.hidden = false;
+  strip.innerHTML = `This page is static, so it replays one real response recorded on `
+    + `${ex.recorded_at} — the probabilities and timings below came back from the model, `
+    + `unedited. Checking a note you write needs a server holding the API key: `
+    + `<a href="https://github.com/ygivenx/jev-try#run-it-in-codespaces">run it in a Codespace</a>.`;
+  // Keep one name for the action everywhere it is referred to.
+  document.getElementById("check-btn").textContent = "Show the saved check";
+  document.getElementById("nudge-host").innerHTML = '<p class="empty">Nothing shown yet. '
+    + 'Show the saved check to see whether the chart carries out what the note says.</p>';
+})();
+
+function start(c) {
   state.patient = c.patient;
   state.note = c.note;
   state.placed = c.placed.slice();
@@ -258,7 +328,26 @@ fetch("/api/case").then(r => r.json()).then(c => {
   set("pt-arr", p.arrived); set("pt-alg", p.allergies);
   renderNote();
   renderChart();
-});
+}
+
+function renderKeyForm() {
+  const host = document.getElementById("key-host");
+  host.hidden = false;
+  const label = el("label");
+  label.setAttribute("for", "key-input");
+  label.textContent = "This server has no TypeSafe key. Paste yours to run a check.";
+  const input = el("input");
+  input.id = "key-input";
+  input.type = "password";
+  input.autocomplete = "off";
+  input.spellcheck = false;
+  input.placeholder = "apikey_…";
+  input.addEventListener("input", () => state.apiKey = input.value.trim());
+  const hint = el("p", "aside");
+  hint.textContent = "Kept in this browser tab only and sent to your own server for the "
+    + "request. It is not saved anywhere and it is not sent to anyone else.";
+  host.append(label, input, hint);
+}
 
 // ---- the note -------------------------------------------------------------
 function flaggedSentences() {
@@ -289,10 +378,13 @@ function renderNote() {
     return;
   }
 
-  const flags = flaggedSentences();
+  // "prose" is the static copy before the saved check is shown: the note as
+  // written, nothing marked yet.
+  const flags = state.result ? flaggedSentences() : new Map();
+  const paragraphs = state.result?.paragraphs ?? state.recorded.check.paragraphs;
   const body = el("div", "note-body");
   let i = 0;
-  state.result.paragraphs.forEach(para => {
+  paragraphs.forEach(para => {
     const p = el("p");
     para.forEach((s, j) => {
       if (flags.has(s.id)) {
@@ -478,28 +570,46 @@ function renderMeta() {
 const checkBtn = document.getElementById("check-btn");
 const editBtn = document.getElementById("edit-btn");
 
+function showError(message) {
+  const host = document.getElementById("nudge-host");
+  host.textContent = "";
+  const p = el("p", "err");
+  p.textContent = message;
+  host.append(p);
+}
+
+function show(result, { editable }) {
+  state.result = result;
+  state.mode = "reviewed";
+  renderNote(); renderChart(); renderNudge(); renderDeclined(); renderMeta();
+  editBtn.hidden = !editable;
+}
+
 checkBtn.addEventListener("click", async () => {
+  if (!state.live) {
+    show(state.recorded.check, { editable: false });
+    checkBtn.disabled = true;
+    checkBtn.textContent = "Saved check shown";
+    return;
+  }
+  if (state.needsKey && !state.apiKey) {
+    showError("Paste a TypeSafe key above, then check.");
+    document.getElementById("key-input")?.focus();
+    return;
+  }
   checkBtn.disabled = true;
   checkBtn.textContent = "Checking…";
   try {
+    const body = { note: state.note, placed: state.placed };
+    if (state.apiKey) body.api_key = state.apiKey;
     const res = await fetch("/api/check", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ note: state.note, placed: state.placed }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (data.error) {
-      const host = document.getElementById("nudge-host");
-      host.textContent = "";
-      const p = el("p", "err");
-      p.textContent = data.error;
-      host.append(p);
-      return;
-    }
-    state.result = data;
-    state.mode = "reviewed";
-    renderNote(); renderChart(); renderNudge(); renderDeclined(); renderMeta();
-    editBtn.hidden = false;
+    if (data.error) { showError(data.error); return; }
+    show(data, { editable: true });
   } finally {
     checkBtn.disabled = false;
     checkBtn.textContent = "Check again";

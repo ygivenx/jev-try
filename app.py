@@ -17,6 +17,7 @@ supplies judgments about prose; it never decides what happens.
 
 from __future__ import annotations
 
+import os
 import re
 import time
 from pathlib import Path
@@ -24,7 +25,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, SecretStr
 from typesafe_sdk import AsyncTypeSafeClient, Choice, Noul, TypeSafeError
 
 load_dotenv()
@@ -108,6 +109,10 @@ def split_note(note: str) -> list[list[dict]]:
 class CheckRequest(BaseModel):
     note: str = SEED_NOTE
     placed: list[str] = SEED_PLACED
+    # Let whoever is using the page supply their own key, so a deployment does
+    # not have to hold one. SecretStr keeps it out of reprs and tracebacks; it is
+    # used for the request and never written down.
+    api_key: SecretStr | None = None
 
 
 @app.get("/")
@@ -122,6 +127,7 @@ def case():
         "note": SEED_NOTE,
         "placed": SEED_PLACED,
         "catalog": [{"code": c, "label": lbl} for c, lbl, _ in CATALOG],
+        "needs_key": not os.environ.get("TYPESAFE_API_KEY"),
     }
 
 
@@ -135,8 +141,10 @@ async def check(req: CheckRequest):
     placed = set(req.placed)
     t_start = time.perf_counter()
 
+    # api_key=None falls back to TYPESAFE_API_KEY in the environment.
+    key = req.api_key.get_secret_value() if req.api_key else None
     try:
-        async with AsyncTypeSafeClient() as client:
+        async with AsyncTypeSafeClient(api_key=key) as client:
             # ---- stage 1: two atomic judgments per catalogue item ----------
             questions = {}
             for i, (code, label, desc) in enumerate(CATALOG):

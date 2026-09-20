@@ -1,0 +1,48 @@
+name: pages
+
+# Publishes the static copy: the same index.html, plus one recorded response.
+# No secret is involved, because nothing here calls the API.
+
+on:
+  push:
+    branches: [main]
+    paths: [index.html, example.json, .github/workflows/pages.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Assemble the site
+        run: |
+          mkdir -p site
+          cp index.html example.json site/
+          # Tell the page there is no server, so it does not probe /api/case and
+          # leave a 404 in every visitor's console.
+          sed -i 's|</head>|<script>window.STATIC=1</script>\n</head>|' site/index.html
+          grep -q 'window.STATIC=1' site/index.html
+          # Fail loudly rather than shipping a page that silently has no example.
+          python -c "import json; d=json.load(open('site/example.json')); assert d['check']['missing'], 'recording has no findings'"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
